@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bảng Quản Trị Giáo Viên - Hệ Thống Trắc Nghiệm</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Thư viện SheetJS để xuất Excel mượt mà không cần server -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --primary-light: #eff6ff;
+      --success: #10b981;
+      --success-light: #ecfdf5;
+      --danger: #ef4444;
+      --danger-light: #fef2f2;
+      --warning: #f59e0b;
+      --warning-light: #fef3c7;
+      --dark: #0f172a;
+      --gray-50: #f8fafc;
+      --gray-100: #f1f5f9;
+      --gray-200: #e2e8f0;
+      --gray-300: #cbd5e1;
+      --gray-400: #94a3b8;
+      --gray-500: #64748b;
+      --gray-600: #475569;
+      --gray-700: #334155;
+      --card-bg: #ffffff;
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.08), 0 2px 4px -2px rgba(0,0,0,0.05);
+      --shadow-xl: 0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.05);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    body {
+      background: #f1f5f9;
+      color: var(--gray-700);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Màn hình đăng nhập */
+    .login-container {
+      margin: auto;
+      width: 100%;
+      max-width: 420px;
+      padding: 32px 24px;
+      background: var(--card-bg);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-xl);
+      text-align: center;
+    }
+    .login-icon {
+      width: 64px;
+      height: 64px;
+      background: var(--primary-light);
+      color: var(--primary);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 30px;
+      margin: 0 auto 20px;
+    }
+    .login-title {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--dark);
+      margin-bottom: 8px;
+    }
+    .login-desc {
+      font-size: 14px;
+      color: var(--gray-500);
+      margin-bottom: 24px;
+    }
+    .form-group {
+      margin-bottom: 20px;
+      text-align: left;
+    }
+    .form-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--gray-700);
+      margin-bottom: 6px;
+    }
+    .form-input {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1.5px solid var(--gray-200);
+      border-radius: var(--radius-sm);
+      font-size: 15px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .form-input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(37,99,235,0.15);
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px 20px;
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-decoration: none;
+    }
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+      width: 100%;
+    }
+    .btn-primary:hover {
+      background: var(--primary-hover);
+    }
+    .btn-success {
+      background: var(--success);
+      color: white;
+    }
+    .btn-success:hover {
+      background: #059669;
+    }
+    .btn-outline {
+      background: white;
+      border: 1px solid var(--gray-300);
+      color: var(--gray-700);
+    }
+    .btn-outline:hover {
+      background: var(--gray-50);
+    }
+    .btn-danger {
+      background: var(--danger);
+      color: white;
+    }
+    .btn-danger:hover {
+      background: #dc2626;
+    }
+
+    /* Màn hình Dashboard Admin */
+    #admin-app {
+      display: none;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+    .navbar {
+      background: white;
+      border-bottom: 1px solid var(--gray-200);
+      padding: 14px 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      box-shadow: var(--shadow-sm);
+    }
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--dark);
+    }
+    .nav-badge {
+      background: #e0e7ff;
+      color: #3730a3;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .main-content {
+      max-width: 1400px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 24px 20px;
+      flex: 1;
+    }
+
+    /* Cards Thống kê */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .stat-card {
+      background: white;
+      padding: 20px;
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--gray-200);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .stat-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--gray-500);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+    }
+    .stat-value {
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--dark);
+    }
+    .stat-icon {
+      width: 50px;
+      height: 50px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+    }
+
+    /* Thanh điều khiển & Lọc */
+    .controls-bar {
+      background: white;
+      padding: 16px 20px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--gray-200);
+      box-shadow: var(--shadow-sm);
+      margin-bottom: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+    }
+    .filter-group {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+    }
+    .search-input {
+      padding: 10px 14px;
+      border: 1px solid var(--gray-300);
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      width: 240px;
+      outline: none;
+    }
+    .search-input:focus {
+      border-color: var(--primary);
+    }
+    .select-input {
+      padding: 10px 14px;
+      border: 1px solid var(--gray-300);
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      background: white;
+      outline: none;
+    }
+
+    /* Bảng dữ liệu */
+    .table-container {
+      background: white;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--gray-200);
+      box-shadow: var(--shadow-sm);
+      overflow-x: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 14px;
+    }
+    thead th {
+      background: #f8fafc;
+      color: var(--gray-600);
+      font-weight: 700;
+      padding: 14px 16px;
+      border-bottom: 2px solid var(--gray-200);
+      white-space: nowrap;
+    }
+    tbody td {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--gray-100);
+      vertical-align: middle;
+    }
+    tbody tr:hover {
+      background: #f8fafc;
+    }
+
+    .badge-score {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-weight: 800;
+      font-size: 13px;
+    }
+    .badge-high { background: var(--success-light); color: var(--success); }
+    .badge-med { background: var(--warning-light); color: var(--warning); }
+    .badge-low { background: var(--danger-light); color: var(--danger); }
+
+    .badge-warning {
+      background: #fef2f2;
+      color: #b91c1c;
+      border: 1px solid #fecaca;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .badge-ok {
+      background: #ecfdf5;
+      color: #047857;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    /* Modal chi tiết & Cài đặt */
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(4px);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .modal-card {
+      background: white;
+      border-radius: var(--radius-lg);
+      max-width: 650px;
+      width: 100%;
+      max-height: 85vh;
+      overflow-y: auto;
+      padding: 24px;
+      box-shadow: var(--shadow-xl);
+      position: relative;
+    }
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 18px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--gray-200);
+    }
+    .modal-title {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--dark);
+    }
+    .btn-close {
+      background: none;
+      border: none;
+      font-size: 22px;
+      color: var(--gray-400);
+      cursor: pointer;
+    }
+    .btn-close:hover {
+      color: var(--dark);
+    }
+    .detail-item {
+      padding: 12px;
+      margin-bottom: 10px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--gray-200);
+    }
+    .detail-item.correct {
+      background: var(--success-light);
+      border-color: #a7f3d0;
+    }
+    .detail-item.wrong {
+      background: var(--danger-light);
+      border-color: #fecaca;
+    }
+
+    /* Live pulse animation */
+    .pulse-dot {
+      width: 8px;
+      height: 8px;
+      background: var(--success);
+      border-radius: 50%;
+      display: inline-block;
+      box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+      animation: pulse 1.8s infinite;
+    }
+    @keyframes pulse {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+      70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- MÀN HÌNH ĐĂNG NHẬP -->
+  <div id="login-screen" style="display: flex; min-height: 100vh; align-items: center; justify-content: center; padding: 20px;">
+    <div class="login-container">
+      <div class="login-icon">🛡️</div>
+      <h1 class="login-title">Quản Trị Bài Thi</h1>
+      <p class="login-desc">Hệ thống Trắc Nghiệm Trực Tuyến Cloudflare D1</p>
+
+      <form id="form-login" onsubmit="handleLogin(event)">
+        <div class="form-group">
+          <label class="form-label">Mật khẩu giáo viên</label>
+          <input type="password" id="input-password" class="form-input" placeholder="Nhập mật khẩu (mặc định: giaovien2026)" required autofocus>
+        </div>
+        <div id="login-error" style="color: var(--danger); font-size: 13px; margin-bottom: 14px; display: none;"></div>
+        <button type="submit" id="btn-login" class="btn btn-primary">Đăng Nhập Quản Trị</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- BẢNG ĐIỀU KHIỂN CHÍNH (ADMIN APP) -->
+  <div id="admin-app">
+    <!-- Navbar -->
+    <header class="navbar">
+      <div class="nav-brand">
+        <span>🎓 Bảng Điểm Thi Trực Tuyến</span>
+        <span class="nav-badge">Cloudflare D1</span>
+        <span style="font-size: 13px; font-weight: 500; color: var(--gray-500); display: flex; align-items: center; gap: 6px;">
+          <span class="pulse-dot"></span> Sẵn sàng chịu tải 700+ HS
+        </span>
+      </div>
+
+      <div class="nav-actions">
+        <button class="btn btn-outline" onclick="openSettingsModal()">⚙️ Cài Đặt</button>
+        <button class="btn btn-outline" onclick="handleLogout()" style="color: var(--danger);">Đăng Xuất</button>
+      </div>
+    </header>
+
+    <!-- Nội dung chính -->
+    <main class="main-content">
+      <!-- Thống kê nhanh -->
+      <section class="stats-grid">
+        <div class="stat-card">
+          <div>
+            <div class="stat-label">Tổng bài đã nộp</div>
+            <div class="stat-value" id="stat-total">0</div>
+          </div>
+          <div class="stat-icon" style="background: var(--primary-light); color: var(--primary);">📝</div>
+        </div>
+
+        <div class="stat-card">
+          <div>
+            <div class="stat-label">Điểm trung bình</div>
+            <div class="stat-value" id="stat-avg">0.0</div>
+          </div>
+          <div class="stat-icon" style="background: var(--warning-light); color: var(--warning);">⭐</div>
+        </div>
+
+        <div class="stat-card">
+          <div>
+            <div class="stat-label">Tỉ lệ đạt (≥ 5.0)</div>
+            <div class="stat-value" id="stat-passed">0%</div>
+          </div>
+          <div class="stat-icon" style="background: var(--success-light); color: var(--success);">🎯</div>
+        </div>
+
+        <div class="stat-card">
+          <div>
+            <div class="stat-label">Cảnh báo thiết bị / F12</div>
+            <div class="stat-value" id="stat-warning" style="color: var(--danger);">0</div>
+          </div>
+          <div class="stat-icon" style="background: var(--danger-light); color: var(--danger);">⚠️</div>
+        </div>
+      </section>
+
+      <!-- Thanh công cụ lọc & Xuất Excel -->
+      <section class="controls-bar">
+        <div class="filter-group">
+          <input type="text" id="search-input" class="search-input" placeholder="🔍 Tìm tên, mã SV, lớp..." oninput="debounceLoad()">
+          <select id="grade-filter" class="select-input" onchange="loadResults()">
+            <option value="all">Tất cả các khối</option>
+            <option value="10">Khối 10</option>
+            <option value="11">Khối 11</option>
+            <option value="12">Khối 12</option>
+          </select>
+          <select id="warning-filter" class="select-input" onchange="filterLocalData()">
+            <option value="all">Tất cả tình trạng</option>
+            <option value="clean">Hợp lệ (Không cảnh báo)</option>
+            <option value="flagged">Có cảnh báo F12 / Nghi vấn</option>
+          </select>
+          <button class="btn btn-outline" onclick="loadResults()" title="Tải lại dữ liệu">🔄 Làm mới</button>
+        </div>
+
+        <div style="display: flex; gap: 10px;">
+          <!-- NÚT XUẤT FILE EXCEL (.XLSX) -->
+          <button class="btn btn-success" onclick="exportToExcel()">
+            📥 Xuất File Excel (.xlsx)
+          </button>
+          <button class="btn btn-outline" onclick="confirmClearAll()" style="color: var(--danger);" title="Xóa kết quả thi thử">
+            🗑️ Xóa kết quả thi
+          </button>
+        </div>
+      </section>
+
+      <!-- Bảng danh sách kết quả -->
+      <section class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 50px;">STT</th>
+              <th>Thời Gian</th>
+              <th>Họ và Tên</th>
+              <th>Email Gmail</th>
+              <th>Mã SV / Lớp</th>
+              <th>Khối Thi</th>
+              <th>SĐT</th>
+              <th>Điểm Số</th>
+              <th>Số Câu Đúng</th>
+              <th>Tỉ Lệ</th>
+              <th>Cảnh Báo Thiết Bị</th>
+              <th style="text-align: center;">Thao Tác</th>
+            </tr>
+          </thead>
+          <tbody id="results-tbody">
+            <tr>
+              <td colspan="12" style="text-align: center; padding: 40px; color: var(--gray-400);">
+                Đang tải dữ liệu bài thi...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+    </main>
+  </div>
+
+  <!-- MODAL XEM CHI TIẾT BÀI THI -->
+  <div id="modal-detail" class="modal-backdrop">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title" id="modal-student-name">Chi Tiết Bài Thi</h3>
+        <button class="btn-close" onclick="closeModal('modal-detail')">&times;</button>
+      </div>
+      <div id="modal-meta" style="margin-bottom: 16px; font-size: 14px; color: var(--gray-600);"></div>
+      <div id="modal-questions-list"></div>
+    </div>
+  </div>
+
+  <!-- MODAL CÀI ĐẶT THỜI GIAN & MẬT KHẨU -->
+  <div id="modal-settings" class="modal-backdrop">
+    <div class="modal-card" style="max-width: 480px;">
+      <div class="modal-header">
+        <h3 class="modal-title">⚙️ Cài Đặt Hệ Thống</h3>
+        <button class="btn-close" onclick="closeModal('modal-settings')">&times;</button>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Google OAuth Client ID (Dành cho Đăng nhập Gmail)</label>
+        <input type="text" id="setting-google-client-id" class="form-input" placeholder="Ví dụ: 123456789-xyz.apps.googleusercontent.com">
+        <small style="color: var(--gray-500); font-size: 12px;">Tạo trong Google Cloud Console mục OAuth 2.0 Client IDs (Web application).</small>
+      </div>
+
+      <div class="form-group" style="display: flex; align-items: center; gap: 8px;">
+        <input type="checkbox" id="setting-require-google" style="width: 18px; height: 18px; cursor: pointer;">
+        <label for="setting-require-google" class="form-label" style="margin-bottom: 0; cursor: pointer;">
+          Bắt buộc học sinh đăng nhập Gmail trước khi làm bài (chống mạo danh)
+        </label>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Thời gian làm mỗi câu (Giây)</label>
+        <input type="number" id="setting-time-limit" class="form-input" min="5" max="300" value="15">
+        <small style="color: var(--gray-500); font-size: 12px;">Mặc định: 15 giây/câu (kể cả câu khởi động).</small>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Đổi mật khẩu giáo viên mới (Để trống nếu không đổi)</label>
+        <input type="password" id="setting-new-password" class="form-input" placeholder="Mật khẩu mới ít nhất 4 ký tự">
+      </div>
+
+      <div id="setting-status" style="font-size: 13px; margin-bottom: 14px; display: none;"></div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 10px;">
+        <button class="btn btn-outline" onclick="closeModal('modal-settings')">Hủy</button>
+        <button class="btn btn-primary" onclick="saveSettings()">Lưu Cài Đặt</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let authToken = localStorage.getItem("quiz_admin_token") || "";
+    let cachedResults = [];
+    let debounceTimer = null;
+
+    // Khởi tạo
+    if (authToken) {
+      checkAuthAndLoad();
+    }
+
+    async function checkAuthAndLoad() {
+      showAdminApp();
+      await loadResults();
+    }
+
+    function showAdminApp() {
+      document.getElementById("login-screen").style.display = "none";
+      document.getElementById("admin-app").style.display = "flex";
+    }
+
+    function handleLogout() {
+      localStorage.removeItem("quiz_admin_token");
+      authToken = "";
+      window.location.reload();
+    }
+
+    // XỬ LÝ ĐĂNG NHẬP
+    async function handleLogin(e) {
+      e.preventDefault();
+      const password = document.getElementById("input-password").value;
+      const errEl = document.getElementById("login-error");
+      const btn = document.getElementById("btn-login");
+
+      errEl.style.display = "none";
+      btn.disabled = true;
+      btn.textContent = "Đang kiểm tra...";
+
+      try {
+        const res = await fetch("/api/admin/auth", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ password: password })
+        });
+        const data = await res.json();
+
+        if (data.success && data.token) {
+          authToken = "Bearer " + data.token;
+          localStorage.setItem("quiz_admin_token", authToken);
+          showAdminApp();
+          loadResults();
+        } else {
+          errEl.textContent = data.message || "Mật khẩu không chính xác!";
+          errEl.style.display = "block";
+        }
+      } catch (err) {
+        errEl.textContent = "Không thể kết nối máy chủ: " + err.message;
+        errEl.style.display = "block";
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Đăng Nhập Quản Trị";
+      }
+    }
+
+    function debounceLoad() {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(filterLocalData, 300);
+    }
+
+    // TẢI DANH SÁCH BÀI THI TỪ CLOUDFLARE D1
+    async function loadResults() {
+      if (!authToken) return;
+
+      const grade = document.getElementById("grade-filter").value;
+      const search = document.getElementById("search-input").value;
+
+      try {
+        const res = await fetch(`/api/admin/results?grade=${encodeURIComponent(grade)}&search=${encodeURIComponent(search)}`, {
+          headers: { "Authorization": authToken }
+        });
+
+        if (res.status === 401) {
+          handleLogout();
+          return;
+        }
+
+        const data = await res.json();
+        if (data.success) {
+          cachedResults = data.results || [];
+          // Cập nhật thống kê
+          document.getElementById("stat-total").textContent = data.stats.totalSubmissions;
+          document.getElementById("stat-avg").textContent = data.stats.avgScore;
+          document.getElementById("stat-passed").textContent = data.stats.passedRate;
+          document.getElementById("stat-warning").textContent = data.stats.warningCount;
+
+          filterLocalData();
+        }
+      } catch (err) {
+        console.error("Lỗi tải kết quả:", err);
+      }
+    }
+
+    // LỌC CỤC BỘ (Cảnh báo vs Không cảnh báo) & RENDER BẢNG
+    function filterLocalData() {
+      const warningFilter = document.getElementById("warning-filter").value;
+      const search = (document.getElementById("search-input").value || "").toLowerCase().trim();
+
+      let filtered = cachedResults.filter(row => {
+        if (warningFilter === "flagged") {
+          return row.device_warning && row.device_warning.startsWith("CẦN KIỂM TRA");
+        }
+        if (warningFilter === "clean") {
+          return !row.device_warning || !row.device_warning.startsWith("CẦN KIỂM TRA");
+        }
+        return true;
+      });
+
+      if (search) {
+        filtered = filtered.filter(r => 
+          (r.full_name || "").toLowerCase().includes(search) ||
+          (r.student_code || "").toLowerCase().includes(search) ||
+          (r.phone || "").includes(search)
+        );
+      }
+
+      renderTable(filtered);
+    }
+
+    function renderTable(list) {
+      const tbody = document.getElementById("results-tbody");
+      if (!list || list.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="11" style="text-align: center; padding: 40px; color: var(--gray-400);">
+              Chưa có kết quả bài thi nào phù hợp.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = list.map((r, index) => {
+        const score = parseFloat(r.score) || 0;
+        let scoreClass = "badge-low";
+        if (score >= 8.0) scoreClass = "badge-high";
+        else if (score >= 5.0) scoreClass = "badge-med";
+
+        const isFlagged = r.device_warning && r.device_warning.startsWith("CẦN KIỂM TRA");
+        const warningBadge = isFlagged ? 
+          `<span class="badge-warning" title="${escapeHtml(r.device_warning)}">⚠️ ${escapeHtml(r.device_warning)}</span>` : 
+          `<span class="badge-ok">✓ Hợp lệ</span>`;
+
+        return `
+          <tr>
+            <td>${index + 1}</td>
+            <td style="white-space: nowrap; color: var(--gray-500); font-size: 13px;">${escapeHtml(r.timestamp_vn || "")}</td>
+            <td><strong>${escapeHtml(r.full_name || "Ẩn danh")}</strong></td>
+            <td><span style="font-size: 13px; color: var(--primary);">${escapeHtml(r.email || "-")}</span></td>
+            <td>${escapeHtml(r.student_code || "")}</td>
+            <td><span style="font-weight: 600;">${escapeHtml(r.grade || "")}</span></td>
+            <td>${escapeHtml(r.phone || "")}</td>
+            <td><span class="badge-score ${scoreClass}">${score.toFixed(1)}</span></td>
+            <td>${r.correct_count} / ${r.total_questions}</td>
+            <td>${escapeHtml(r.percentage || "")}</td>
+            <td style="max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${warningBadge}</td>
+            <td style="text-align: center; white-space: nowrap;">
+              <button class="btn btn-outline" style="padding: 6px 12px; font-size: 12px;" onclick="viewDetail(${r.id})">🔍 Xem</button>
+              <button class="btn btn-outline" style="padding: 6px 10px; font-size: 12px; color: var(--danger);" onclick="deleteItem(${r.id})" title="Xóa">✕</button>
+            </td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    // XEM CHI TIẾT 1 BÀI THI
+    function viewDetail(id) {
+      const item = cachedResults.find(r => r.id === id);
+      if (!item) return;
+
+      document.getElementById("modal-student-name").textContent = `Bài thi của: ${item.full_name} (${item.grade})`;
+      document.getElementById("modal-meta").innerHTML = `
+        Thời gian nộp: <strong>${item.timestamp_vn}</strong> | Điểm số: <strong>${item.score}/10</strong> (${item.correct_count}/${item.total_questions} câu)
+        <br>Cảnh báo: <em>${escapeHtml(item.device_warning || "Không có")}</em>
+      `;
+
+      let questions = [];
+      try {
+        questions = JSON.parse(item.detailed_results || "[]");
+      } catch (e) {}
+
+      const listEl = document.getElementById("modal-questions-list");
+      if (questions.length === 0) {
+        listEl.innerHTML = `<div style="color: var(--gray-400);">Tóm tắt: ${escapeHtml(item.summary_text || "Không có dữ liệu chi tiết")}</div>`;
+      } else {
+        listEl.innerHTML = questions.map((q, idx) => `
+          <div class="detail-item ${q.isCorrect ? 'correct' : 'wrong'}">
+            <div style="font-weight: 700; margin-bottom: 6px;">Câu ${idx + 1}: ${escapeHtml(q.question)}</div>
+            <div style="font-size: 13px;">Lựa chọn của HS: <strong style="color: ${q.isCorrect ? 'var(--success)' : 'var(--danger)'};">${escapeHtml(q.userAnswerText)}</strong> ${q.isCorrect ? '✓' : '✗'}</div>
+            ${!q.isCorrect ? `<div style="font-size: 13px; color: var(--success);">Đáp án đúng: <strong>${escapeHtml(q.correctAnswerText)}</strong></div>` : ''}
+          </div>
+        `).join("");
+      }
+
+      openModal("modal-detail");
+    }
+
+    // XÓA 1 KẾT QUẢ
+    async function deleteItem(id) {
+      if (!confirm("Bạn có chắc chắn muốn xóa bài thi này không?")) return;
+      try {
+        const res = await fetch(`/api/admin/results?id=${id}`, {
+          method: "DELETE",
+          headers: { "Authorization": authToken }
+        });
+        const data = await res.json();
+        if (data.success) {
+          cachedResults = cachedResults.filter(r => r.id !== id);
+          filterLocalData();
+        } else {
+          alert("Lỗi: " + data.message);
+        }
+      } catch (e) {
+        alert("Lỗi: " + e.message);
+      }
+    }
+
+    // XÓA TOÀN BỘ KẾT QUẢ THI
+    async function confirmClearAll() {
+      const pin = prompt("CẢNH BÁO: Hành động này sẽ xóa toàn bộ bài nộp của học sinh để chuẩn bị ca thi mới.\nNhập 'XOA' để xác nhận:");
+      if (pin !== "XOA") return;
+
+      try {
+        const res = await fetch("/api/admin/results?clearAll=true", {
+          method: "DELETE",
+          headers: { "Authorization": authToken }
+        });
+        const data = await res.json();
+        if (data.success) {
+          alert("Đã xóa sạch kết quả thi!");
+          loadResults();
+        } else {
+          alert("Lỗi: " + data.message);
+        }
+      } catch (e) {
+        alert("Lỗi: " + e.message);
+      }
+    }
+
+    // XUẤT RA FILE EXCEL (.XLSX) DÙNG SHEETJS
+    function exportToExcel() {
+      if (cachedResults.length === 0) {
+        alert("Hiện tại chưa có bài thi nào để xuất Excel!");
+        return;
+      }
+
+      // Chuẩn bị dữ liệu mảng các hàng
+      const excelData = [
+        [
+          "STT",
+          "Thời Gian Nộp",
+          "Họ và Tên",
+          "Email Gmail",
+          "Mã SV / Lớp",
+          "Khối Thi",
+          "Số Điện Thoại",
+          "Điểm Số (Thang 10)",
+          "Số Câu Đúng",
+          "Tổng Số Câu",
+          "Tỉ Lệ Đúng (%)",
+          "Chi Tiết Câu Trả Lời",
+          "Cảnh Báo Thiết Bị / F12"
+        ]
+      ];
+
+      cachedResults.forEach((r, idx) => {
+        excelData.push([
+          idx + 1,
+          r.timestamp_vn || "",
+          r.full_name || "Ẩn danh",
+          r.email || "",
+          r.student_code || "",
+          r.grade || "",
+          r.phone || "",
+          parseFloat(r.score) || 0,
+          r.correct_count || 0,
+          r.total_questions || 0,
+          r.percentage || "",
+          r.summary_text || "",
+          r.device_warning || ""
+        ]);
+      });
+
+      // Tạo Workbook và Worksheet
+      const ws = XLSX.utils.aoa_to_sheet(excelData);
+
+      // Căn chỉnh độ rộng các cột trong Excel
+      ws["!cols"] = [
+        { wch: 6 },  // STT
+        { wch: 20 }, // Thời gian
+        { wch: 25 }, // Họ tên
+        { wch: 28 }, // Email Gmail
+        { wch: 15 }, // Lớp
+        { wch: 10 }, // Khối
+        { wch: 14 }, // SĐT
+        { wch: 18 }, // Điểm
+        { wch: 12 }, // Câu đúng
+        { wch: 12 }, // Tổng số câu
+        { wch: 14 }, // Tỉ lệ
+        { wch: 45 }, // Chi tiết
+        { wch: 35 }  // Cảnh báo
+      ];
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "KetQuaThi");
+
+      // Đặt tên file kèm ngày giờ hiện tại
+      const now = new Date();
+      const dateStr = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}_${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}`;
+      const fileName = `KetQuaThi_TracNghiem_${dateStr}.xlsx`;
+
+      XLSX.writeFile(wb, fileName);
+    }
+
+    // CÀI ĐẶT
+    async function openSettingsModal() {
+      try {
+        const res = await fetch("/api/admin/settings", {
+          headers: { "Authorization": authToken }
+        });
+        const data = await res.json();
+        if (data.success && data.settings) {
+          if (data.settings.time_limit_seconds) {
+            document.getElementById("setting-time-limit").value = data.settings.time_limit_seconds;
+          }
+          document.getElementById("setting-google-client-id").value = data.settings.google_client_id || "";
+          document.getElementById("setting-require-google").checked = data.settings.require_google_login !== "false";
+        }
+      } catch (e) {}
+
+      document.getElementById("setting-new-password").value = "";
+      document.getElementById("setting-status").style.display = "none";
+      openModal("modal-settings");
+    }
+
+    async function saveSettings() {
+      const timeLimit = document.getElementById("setting-time-limit").value;
+      const googleClientId = document.getElementById("setting-google-client-id").value;
+      const requireGoogle = document.getElementById("setting-require-google").checked;
+      const newPassword = document.getElementById("setting-new-password").value;
+      const statusEl = document.getElementById("setting-status");
+
+      try {
+        const res = await fetch("/api/admin/settings", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": authToken
+          },
+          body: JSON.stringify({
+            timeLimitSeconds: timeLimit,
+            googleClientId: googleClientId,
+            requireGoogleLogin: requireGoogle,
+            newPassword: newPassword
+          })
+        });
+        const data = await res.json();
+        if (data.success) {
+          statusEl.textContent = "✓ Đã lưu cài đặt thành công!";
+          statusEl.style.color = "var(--success)";
+          statusEl.style.display = "block";
+          if (newPassword) {
+            alert("Mật khẩu đã đổi! Vui lòng đăng nhập lại bằng mật khẩu mới.");
+            handleLogout();
+          } else {
+            setTimeout(() => closeModal("modal-settings"), 1200);
+          }
+        } else {
+          statusEl.textContent = "Lỗi: " + data.message;
+          statusEl.style.color = "var(--danger)";
+          statusEl.style.display = "block";
+        }
+      } catch (e) {
+        statusEl.textContent = "Lỗi kết nối: " + e.message;
+        statusEl.style.color = "var(--danger)";
+        statusEl.style.display = "block";
+      }
+    }
+
+    function openModal(id) {
+      document.getElementById(id).style.display = "flex";
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).style.display = "none";
+    }
+
+    function escapeHtml(str) {
+      if (!str) return "";
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,9 @@
+name = "kiem-tra-trac-nghiem"
+compatibility_date = "2024-01-01"
+pages_build_output_dir = "public"
+
+# Liên kết cơ sở dữ liệu Cloudflare D1
+[[d1_databases]]
+binding = "DB"
+database_name = "kiemtratracnghiem"
+database_id = "d442ac0f-fdb0-4eab-af11-15342cf8226f"

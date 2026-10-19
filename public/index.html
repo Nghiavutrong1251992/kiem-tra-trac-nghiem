@@ -1,0 +1,1882 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Bài Kiểm Tra Trắc Nghiệm Trực Tuyến</title>
+  <script>
+    // This small script reports errors even if the main quiz script cannot parse.
+    window.quizAppReady = false;
+    window.showQuizError = function (error) {
+      var message = error && error.message ? error.message : String(error);
+      console.error("Quiz error:", error);
+      var notice = document.getElementById("app-error");
+      if (notice) {
+        notice.textContent = "Không thể chạy bài thi: " + message + ". Vui lòng tải lại trang hoặc báo lỗi này cho giáo viên.";
+        notice.hidden = false;
+      }
+    };
+    window.addEventListener("error", function (event) {
+      if (event.message) window.showQuizError(event.error || event.message);
+    });
+    window.addEventListener("unhandledrejection", function (event) {
+      window.showQuizError(event.reason);
+    });
+  </script>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet">
+
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --primary-light: #eff6ff;
+      --success: #10b981;
+      --success-light: #ecfdf5;
+      --danger: #ef4444;
+      --danger-light: #fef2f2;
+      --warning: #f59e0b;
+      --dark: #0f172a;
+      --gray-50: #f8fafc;
+      --gray-100: #f1f5f9;
+      --gray-200: #e2e8f0;
+      --gray-400: #94a3b8;
+      --gray-500: #64748b;
+      --gray-600: #475569;
+      --gray-700: #334155;
+      --card-bg: #ffffff;
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+      --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    [hidden] {
+      display: none !important;
+    }
+
+    body {
+      background: #f8fafc;
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 0;
+      color: var(--gray-700);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .quiz-container {
+      width: 100%;
+      max-width: 540px;
+      min-height: 100vh;
+      background: var(--card-bg);
+      border-radius: 0;
+      box-shadow: none;
+      overflow-x: hidden;
+      position: relative;
+      animation: fadeIn 0.3s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Screen Management */
+    .screen {
+      display: none;
+      padding: 24px 16px;
+    }
+
+    .screen.active {
+      display: block;
+    }
+
+    /* Tối ưu hiển thị cho máy tính/màn hình rộng */
+    @media (min-width: 641px) {
+      body {
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+        padding: 20px 16px;
+        align-items: center;
+      }
+
+      .quiz-container {
+        min-height: 520px;
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-xl);
+      }
+
+      .screen {
+        padding: 32px 28px;
+      }
+    }
+
+    /* Header & Branding */
+    .brand-header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .badge-tag {
+      display: inline-block;
+      padding: 5px 12px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      border-radius: 9999px;
+      background: var(--primary-light);
+      color: var(--primary);
+      margin-bottom: 10px;
+    }
+
+    .title-main {
+      font-size: 21px;
+      font-weight: 800;
+      color: var(--dark);
+      line-height: 1.3;
+      margin-bottom: 6px;
+    }
+
+    .sub-text {
+      color: var(--gray-500);
+      font-size: 13.5px;
+      line-height: 1.5;
+    }
+
+    /* Input Fields */
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--gray-700);
+      margin-bottom: 6px;
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 13px 15px;
+      border: 1.5px solid var(--gray-200);
+      border-radius: var(--radius-sm);
+      font-size: 15px;
+      color: var(--dark);
+      transition: all 0.2s;
+      outline: none;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+
+    .form-control:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+    }
+
+    /* Nút chọn khối lớp 10 / 11 / 12 */
+    .grade-selector-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .btn-grade {
+      width: 100%;
+      padding: 13px 8px;
+      border: 2px solid var(--gray-200);
+      background: var(--gray-50);
+      border-radius: var(--radius-sm);
+      font-size: 14.5px;
+      font-weight: 700;
+      color: var(--gray-600);
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      outline: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .btn-grade.active {
+      border-color: var(--primary) !important;
+      background: var(--primary-light) !important;
+      color: var(--primary) !important;
+      box-shadow: 0 2px 8px rgba(37, 99, 235, 0.15);
+    }
+
+    /* Rule Alert Card - SỬA LỖI VỠ CHỮ TRÊN ĐIỆN THOẠI */
+    .rule-box {
+      background: #fffbeb;
+      border: 1.5px solid #fde68a;
+      border-radius: var(--radius-md);
+      padding: 16px 14px;
+      margin-bottom: 20px;
+    }
+
+    .rule-box-title {
+      font-size: 14px;
+      font-weight: 800;
+      color: #92400e;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+
+    .rule-list {
+      list-style: none;
+      font-size: 13.5px;
+      color: #78350f;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 0;
+      margin: 0;
+    }
+
+    .rule-list li {
+      position: relative;
+      padding-left: 22px;
+      line-height: 1.55;
+      display: block;
+      /* KHÔNG DÙNG FLEX ĐỂ TRÁNH BỊ CẮT VỠ CÁC TỪ */
+      word-break: break-word;
+    }
+
+    .rule-list li::before {
+      content: "⚡";
+      position: absolute;
+      left: 0;
+      top: 1px;
+      font-size: 13px;
+    }
+
+    /* Primary Button */
+    .btn-action {
+      width: 100%;
+      padding: 14px 24px;
+      background: var(--primary);
+      color: #ffffff;
+      border: none;
+      border-radius: var(--radius-md);
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+    }
+
+    .btn-action:hover {
+      background: var(--primary-hover);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(37, 99, 235, 0.35);
+    }
+
+    .btn-action:active {
+      transform: translateY(0);
+    }
+
+    .btn-action:disabled {
+      background: var(--gray-400);
+      cursor: not-allowed;
+      box-shadow: none;
+      transform: none;
+    }
+
+    /* QUIZ PLAY SCREEN */
+    .quiz-top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--gray-100);
+    }
+
+    .question-counter {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--primary);
+      background: var(--primary-light);
+      padding: 6px 12px;
+      border-radius: 9999px;
+    }
+
+    /* Circular / Badge Timer */
+    .timer-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      border-radius: 9999px;
+      background: var(--gray-100);
+      font-weight: 800;
+      font-size: 15px;
+      color: var(--dark);
+      transition: all 0.3s;
+    }
+
+    .timer-badge.urgent {
+      background: var(--danger-light);
+      color: var(--danger);
+      animation: pulseAlert 0.8s infinite alternate;
+    }
+
+    @keyframes pulseAlert {
+      from {
+        transform: scale(1);
+      }
+
+      to {
+        transform: scale(1.06);
+      }
+    }
+
+    /* Time progress bar */
+    .time-bar-wrapper {
+      height: 6px;
+      background: var(--gray-200);
+      border-radius: 9999px;
+      overflow: hidden;
+      margin-bottom: 24px;
+    }
+
+    .time-bar-inner {
+      height: 100%;
+      width: 100%;
+      background: var(--primary);
+      transition: width 0.1s linear, background-color 0.3s;
+    }
+
+    .time-bar-inner.urgent {
+      background: var(--danger);
+    }
+
+    /* Question Box */
+    .question-box {
+      margin-bottom: 24px;
+    }
+
+    .question-text {
+      font-size: 19px;
+      font-weight: 700;
+      color: var(--dark);
+      line-height: 1.45;
+    }
+
+    /* Options List */
+    .options-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .opt-btn {
+      width: 100%;
+      padding: 16px 18px;
+      background: var(--gray-50);
+      border: 2px solid var(--gray-200);
+      border-radius: var(--radius-md);
+      text-align: left;
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--gray-700);
+      cursor: pointer;
+      transition: background-color 0.15s, border-color 0.15s, color 0.15s, transform 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      position: relative;
+      outline: none;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    /* CHỈ kích hoạt hiệu ứng Hover trên máy tính (chuột). 
+       Trên màn hình cảm ứng điện thoại tuyệt đối KHÔNG lưu vết hover! */
+    @media (hover: hover) and (pointer: fine) {
+      .opt-btn:hover:not(.locked):not(.selected) {
+        border-color: var(--primary);
+        background: var(--primary-light);
+        color: var(--primary);
+        transform: translateX(4px);
+      }
+
+      .opt-btn:hover:not(.locked):not(.selected) .opt-letter {
+        background: var(--primary);
+        color: #ffffff;
+        border-color: var(--primary);
+      }
+    }
+
+    /* Triệt tiêu hoàn toàn viền focus/active dính vết trên điện thoại */
+    .opt-btn:focus,
+    .opt-btn:focus-visible,
+    .opt-btn:active {
+      outline: none !important;
+      -webkit-tap-highlight-color: transparent !important;
+    }
+
+    .opt-letter {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: #ffffff;
+      border: 1.5px solid var(--gray-200);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 13px;
+      color: var(--gray-600);
+      flex-shrink: 0;
+      transition: all 0.2s;
+    }
+
+    /* Locked state when option clicked */
+    .opt-btn.locked {
+      pointer-events: none;
+      cursor: default;
+    }
+
+    .opt-btn.selected {
+      border-color: var(--primary) !important;
+      background: #2563eb !important;
+      color: #ffffff !important;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+    }
+
+    .opt-btn.selected .opt-letter {
+      background: #ffffff !important;
+      color: var(--primary) !important;
+      border-color: #ffffff !important;
+    }
+
+    .opt-btn.dimmed {
+      opacity: 0.45;
+      pointer-events: none;
+    }
+
+    /* Lock banner */
+    .locked-notice {
+      margin-top: 16px;
+      text-align: center;
+      font-size: 13px;
+      color: var(--gray-500);
+      font-style: italic;
+    }
+
+    /* RESULT SCREEN */
+    .result-hero {
+      text-align: center;
+      padding: 16px 0;
+    }
+
+    .score-circle {
+      width: 120px;
+      height: 120px;
+      margin: 0 auto 16px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #2563eb, #3b82f6);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #ffffff;
+      box-shadow: 0 8px 24px rgba(37, 99, 235, 0.3);
+    }
+
+    .score-num {
+      font-size: 38px;
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    .score-denom {
+      font-size: 13px;
+      font-weight: 600;
+      opacity: 0.85;
+      margin-top: 4px;
+    }
+
+    .result-status {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--dark);
+      margin-bottom: 6px;
+    }
+
+    .result-meta {
+      font-size: 14px;
+      color: var(--gray-500);
+      margin-bottom: 24px;
+    }
+
+    /* Saved sheet alert */
+    .sheet-saved-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 18px;
+      background: var(--success-light);
+      border: 1px solid #a7f3d0;
+      color: #065f46;
+      border-radius: var(--radius-md);
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 24px;
+    }
+
+    /* Detailed answers review */
+    .review-accordion-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--dark);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .review-list {
+      max-height: 320px;
+      overflow-y: auto;
+      padding-right: 4px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .review-item {
+      padding: 14px;
+      border-radius: var(--radius-sm);
+      border-left: 4px solid var(--gray-400);
+      background: var(--gray-50);
+      font-size: 13px;
+    }
+
+    .review-item.correct {
+      border-left-color: var(--success);
+      background: #f0fdf4;
+    }
+
+    .review-item.wrong {
+      border-left-color: var(--danger);
+      background: #fef2f2;
+    }
+
+    .review-q {
+      font-weight: 700;
+      color: var(--dark);
+      margin-bottom: 6px;
+    }
+
+    .review-ans {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    /* Loading Spinner */
+    .spinner {
+      width: 22px;
+      height: 22px;
+      border: 3px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top-color: #ffffff;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="quiz-container">
+
+    <div id="app-error" role="alert" hidden
+      style="margin: 16px; padding: 14px; border: 1px solid #fecaca; border-radius: 8px; background: #fef2f2; color: #991b1b;">
+    </div>
+    <noscript>
+      <p style="padding: 16px;">Vui lòng bật JavaScript trong trình duyệt để làm bài.</p>
+    </noscript>
+
+    <div id="screen-device-blocked" class="screen" style="text-align: center; padding: 36px 20px;">
+      <div style="font-size: 52px; margin-bottom: 12px;">📱</div>
+      <span class="badge-tag">Chỉ làm bài trên điện thoại</span>
+      <h2 style="font-size: 21px; color: var(--dark); margin-bottom: 12px;">Vui lòng dùng điện thoại để làm bài</h2>
+      <p class="sub-text" style="margin-bottom: 16px;">
+        Bài trắc nghiệm này không cho phép làm trên máy tính, laptop hoặc máy tính bảng.
+        Hãy mở đường link bài thi bằng điện thoại của bạn.
+      </p>
+      <p class="sub-text" style="margin-bottom: 20px;">
+        Nếu đang dùng điện thoại, hãy tắt chế độ “Trang web cho máy tính” rồi tải lại trang.
+      </p>
+      <button id="btn-recheck-device" type="button" class="btn-action">Kiểm tra lại thiết bị</button>
+    </div>
+
+    <!-- 1. MÀN HÌNH BẮT ĐẦU (WELCOME SCREEN) -->
+    <div id="screen-welcome" class="screen">
+      <div class="brand-header">
+        <span class="badge-tag" id="grade-badge">Đề Thi Khối 10</span>
+        <h1 class="title-main">BÀI THI TRẮC NGHIỆM GDQP-AN</h1>
+        <p class="sub-text" id="grade-sub">Môn: Giáo dục Quốc phòng và An ninh - Lớp 10</p>
+      </div>
+
+      <div class="rule-box">
+        <div class="rule-box-title">
+          <span>⚠️</span> QUY CHẾ LÀM BÀI BẮT BUỘC
+        </div>
+        <ul class="rule-list">
+          <li><strong>🎯 3 câu khởi động:</strong> Được làm thử 3 câu hỏi vui (1+1=?, con nào biết bơi...) <strong>hoàn
+              toàn không tính điểm</strong> để làm quen với thời gian trả lời và thao tác bấm chọn.</li>
+          <li><strong>Thời gian:</strong> Đúng <strong><span class="question-time-limit">15</span> giây</strong> cho mỗi câu hỏi. Hết thời gian hệ thống tự động khóa
+            và chuyển sang câu tiếp theo.</li>
+          <li><strong>Xáo trộn ngẫu nhiên:</strong> Thứ tự câu hỏi và thứ tự đáp án (A, B, C, D) được random riêng biệt
+            cho từng thí sinh (chống nhìn bài).</li>
+          <li><strong>Khóa kết quả tức thì:</strong> Nhấn chọn đáp án là <strong>khóa luôn</strong>, không thể thay đổi
+            lựa chọn.</li>
+          <li><strong>Không thể quay lại:</strong> Làm bài theo trình tự một chiều, không cho phép lùi lại sửa câu
+            trước.</li>
+          <li><strong>Lưu trữ tự động:</strong> Kết quả bài thi chính thức được ghi trực tiếp vào Google Sheet của giám
+            khảo.</li>
+          <li><strong>Kiểm tra thiết bị:</strong> Dấu hiệu giả lập điện thoại và thao tác F12/phím tắt công cụ phát triển
+            được ghi kèm kết quả để giáo viên kiểm tra.</li>
+        </ul>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Chọn Đề Thi Khối Lớp <span style="color:var(--danger)">*</span></label>
+        <div class="grade-selector-grid">
+          <button type="button" id="btn-grade-10" class="btn-grade active">
+            📘 Đề Lớp 10
+          </button>
+          <button type="button" id="btn-grade-11" class="btn-grade">
+            📗 Đề Lớp 11
+          </button>
+          <button type="button" id="btn-grade-12" class="btn-grade">
+            📙 Đề Lớp 12
+          </button>
+        </div>
+      </div>
+
+      <!-- Khối Đăng Nhập Google (Gmail) Xác Thực Danh Tính Thí Sinh -->
+      <div id="google-auth-box" style="margin-bottom: 20px; padding: 16px; border: 1.5px solid #bfdbfe; background: #eff6ff; border-radius: var(--radius-md); text-align: center;">
+        <div id="google-auth-unauthenticated">
+          <div style="font-size: 13px; font-weight: 700; color: var(--primary); margin-bottom: 6px;">
+            🔑 BƯỚC 1: XÁC THỰC TÀI KHOẢN GMAIL
+          </div>
+          <p style="font-size: 12.5px; color: var(--gray-600); margin-bottom: 12px; line-height: 1.4;">
+            Đăng nhập tài khoản Gmail để hệ thống tự động ghi nhận Họ tên thật và chống mạo danh thí sinh.
+          </p>
+          <div id="google-btn-wrapper" style="display: flex; justify-content: center; min-height: 44px;"></div>
+        </div>
+
+        <div id="google-auth-authenticated" style="display: none; align-items: center; gap: 12px; text-align: left;">
+          <img id="google-user-avatar" src="" alt="Avatar" style="width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--primary); object-fit: cover;">
+          <div style="flex: 1; overflow: hidden;">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span id="google-user-name" style="font-weight: 700; color: var(--dark); font-size: 14.5px;"></span>
+              <span style="background: #dcfce7; color: #15803d; font-size: 11px; font-weight: 700; padding: 2px 6px; border-radius: 4px;">✓ Đã xác thực</span>
+            </div>
+            <div id="google-user-email" style="font-size: 12px; color: var(--gray-500); text-overflow: ellipsis; overflow: hidden; white-space: nowrap;"></div>
+          </div>
+          <button type="button" onclick="handleGoogleSignOut()" style="background: none; border: none; color: var(--danger); font-size: 12px; cursor: pointer; text-decoration: underline;">Đổi tài khoản</button>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Họ và tên thí sinh <span style="color:var(--danger)">*</span></label>
+        <input type="text" id="input-name" class="form-control" placeholder="Ví dụ: Nguyễn Văn An" required
+          autocomplete="off">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Mã sinh viên / Lớp / Đơn vị</label>
+        <input type="text" id="input-code" class="form-control" placeholder="Ví dụ: B22DCCN001 - Lớp 01"
+          autocomplete="off">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Số điện thoại (tùy chọn)</label>
+        <input type="tel" id="input-phone" class="form-control" placeholder="Ví dụ: 0912345678" autocomplete="off">
+      </div>
+
+      <p id="quiz-load-status" role="status" aria-live="polite" class="sub-text" style="margin-bottom: 12px;">Đang tải đề thi...</p>
+      <button id="btn-reload-data" type="button" class="btn-grade" hidden style="margin-bottom: 12px;">Tải lại đề thi</button>
+      <button id="btn-start" type="button" class="btn-action" disabled>
+        <span>Bắt Đầu (3 Câu Khởi Động)</span>
+        <span>➔</span>
+      </button>
+    </div>
+
+    <!-- 2. MÀN HÌNH LÀM BÀI (QUIZ PLAY SCREEN) -->
+    <div id="screen-quiz" class="screen">
+      <div class="quiz-top-bar">
+        <div class="question-counter" id="q-progress">Câu 1 / 10</div>
+        <div class="timer-badge" id="timer-badge">
+          <span>⏳</span>
+          <span id="timer-val">15s</span>
+        </div>
+      </div>
+
+      <!-- Thanh đếm ngược theo thời gian cấu hình -->
+      <div class="time-bar-wrapper">
+        <div class="time-bar-inner" id="time-bar"></div>
+      </div>
+
+      <div class="question-box">
+        <div class="question-text" id="q-text">Đang tải câu hỏi...</div>
+      </div>
+
+      <div class="options-grid" id="options-container">
+        <!-- Render các phương án A, B, C, D qua JS -->
+      </div>
+
+      <div class="locked-notice" id="locked-note">
+        🔒 Lưu ý: Nhấn chọn đáp án sẽ khóa ngay lập tức và chuyển câu sau.
+      </div>
+    </div>
+
+    <!-- 2.5 MÀN HÌNH XÁC NHẬN SAU KHỞI ĐỘNG (WARMUP COMPLETE SCREEN) -->
+    <div id="screen-warmup-done" class="screen" style="text-align: center; padding: 32px 20px;">
+      <div style="font-size: 48px; margin-bottom: 12px;">🎯</div>
+      <span class="badge-tag" style="background:#fef3c7; color:#b45309;">Hết 3 Câu Khởi Động</span>
+      <h2 style="font-size: 22px; font-weight: 800; color: var(--dark); margin: 12px 0 8px;">EM ĐÃ HIỂU CÁCH THI CHƯA?
+      </h2>
+
+      <p style="color: var(--gray-600); font-size: 14px; line-height: 1.6; max-width: 480px; margin: 0 auto 18px;">
+        Quy tắc: Mỗi câu <strong>đúng <span class="question-time-limit">15</span> giây</strong>, <strong>ấn chọn là khóa luôn</strong>, không cho quay lại sửa.
+      </p>
+
+      <div
+        style="background: #fef2f2; border: 1.5px solid #fecaca; border-radius: var(--radius-md); padding: 14px 16px; margin: 0 auto 24px; max-width: 500px; text-align: left;">
+        <div
+          style="color: #b91c1c; font-weight: 800; font-size: 14px; display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+          <span>⚠️</span> CẢNH BÁO QUAN TRỌNG:
+        </div>
+        <div style="color: #991b1b; font-size: 13px; line-height: 1.5;">
+          Khi nhấn <strong>"Bắt đầu thi chính thức"</strong>, bài thi sẽ <strong>CHẠY LIÊN TỤC VÀ KHÔNG CÓ
+            DỪNG</strong>! Điểm số sẽ được ghi thẳng vào Google Sheet của thầy cô.
+        </div>
+      </div>
+
+      <!-- Nút 1: Đã hiểu -> Bắt đầu thi không dừng -->
+      <button id="btn-official" type="button" class="btn-action"
+        style="background: #16a34a; box-shadow: 0 4px 12px rgba(22, 163, 74, 0.35);">
+        <span>🚀 Em Đã Hiểu - Bắt Đầu Thi Chính Thức</span>
+      </button>
+
+      <!-- Nút 2: Chưa hiểu -> Vòng tròn khởi động lại -->
+      <button id="btn-restart-warmup" type="button" class="btn-action"
+        style="margin-top: 14px; background: #ffffff; color: #475569; border: 2px solid #cbd5e1; box-shadow: none;">
+        <span>🔄 Chưa Hiểu - Cho Em Khởi Động Lại Thử Tiếp</span>
+      </button>
+    </div>
+
+    <!-- 3. MÀN HÌNH NỘP BÀI (SUBMITTING / LOADING) -->
+    <div id="screen-submitting" class="screen" style="text-align: center; padding: 48px 24px;">
+      <div class="score-circle" style="background: var(--dark); margin-bottom: 20px;">
+        <div class="spinner" style="width: 40px; height: 40px; border-width: 4px;"></div>
+      </div>
+      <h2 style="font-size: 20px; font-weight: 800; color: var(--dark); margin-bottom: 8px;">Đang nộp bài...</h2>
+      <p style="color: var(--gray-500); font-size: 14px;">Hệ thống đang chấm điểm và ghi dữ liệu vào Google Sheet, vui
+        lòng đợi trong giây lát.</p>
+    </div>
+
+    <!-- 4. MÀN HÌNH KẾT QUẢ (RESULT SCREEN) -->
+    <div id="screen-result" class="screen">
+      <div class="result-hero">
+        <div class="score-circle">
+          <div class="score-num" id="res-score">0</div>
+          <div class="score-denom">Thang điểm 10</div>
+        </div>
+        <div class="result-status" id="res-status">Hoàn thành bài thi!</div>
+        <div class="result-meta" id="res-meta">Bạn đã trả lời đúng 0/10 câu hỏi</div>
+
+        <div class="sheet-saved-badge">
+          <span>✅</span> Đã lưu kết quả bài thi thành công vào Google Sheet!
+        </div>
+      </div>
+
+      <div class="review-accordion-title">
+        <span>Chi tiết bài làm</span>
+        <span style="font-size: 12px; font-weight: 500; color: var(--gray-500);">Tự động đối chiếu</span>
+      </div>
+
+      <div class="review-list" id="review-list">
+        <!-- Render chi tiết từng câu qua JS -->
+      </div>
+
+      <div style="text-align: center; color: var(--gray-400); font-size: 12px;">
+        Hệ thống khóa thi một chiều &copy; Google Apps Script
+      </div>
+    </div>
+
+    <p style="text-align: center; color: #64748b; font-size: 11px; padding: 12px;">Bản 2026.10.18.6 · Chỉ điện thoại</p>
+  </div>
+
+  <script>
+    // Dữ liệu 10 câu hỏi Đề thi GDQP-AN Lớp 10 chuẩn
+    const LOCAL_FALLBACK_QUESTIONS_10 = [
+      {
+        id: 1,
+        question: "Ngày đầu thành lập Đội Việt Nam Tuyên truyền Giải phóng quân có bao nhiêu người",
+        options: ["32", "33", "34", "35"],
+        timeLimit: 15
+      },
+      {
+        id: 2,
+        question: "Cách đánh chủ yếu của Dân quân tự vệ trong thời chống Pháp và chống Mỹ là:",
+        options: [
+          "Hiệp đồng binh chủng.",
+          "Du kích.",
+          "Tác chiến bằng các binh đoàn chủ lực.",
+          "Đánh nhanh, thắng nhanh"
+        ],
+        timeLimit: 15
+      },
+      {
+        id: 3,
+        question: "Anh hùng lực lượng vũ trang nào sau đây thuộc Công an nhân dân?",
+        options: ["Võ Thị Sáu", "Nguyễn Viết Xuân", "Anh hùng Lê Mã Lương", "Phạm Tuân"],
+        timeLimit: 15
+      },
+      {
+        id: 4,
+        question: "Luật Giáo dục quốc phòng và an ninh năm 2013, gồm:",
+        options: [
+          "8 chương, 47 điều",
+          "8 chương, 57 điều",
+          "9 chương, 57 điều",
+          "9 chương, 47 điều"
+        ],
+        timeLimit: 15
+      },
+      {
+        id: 5,
+        question: "Một trong những nguồn bổ sung cho sĩ quan tại ngũ của Quân đội?",
+        options: [
+          "Sĩ quan dự bị",
+          "Đảng viên Đảng Cộng sản Việt Nam",
+          "Dân quân tự vệ",
+          "Đoàn viên thanh niên Cộng sản Hồ Chí Minh"
+        ],
+        timeLimit: 15
+      },
+      {
+        id: 6,
+        question: "Công dân trong độ tuổi gọi nhập ngũ được tuyển chọn vào phục vụ trong Công an nhân dân với thời hạn:",
+        options: ["12 tháng", "24 tháng", "36 tháng", "6 tháng"],
+        timeLimit: 15
+      },
+      {
+        id: 7,
+        question: "Người nghiện ma túy thường bị ảo giác, hoang tưởng, kích động, rối loạn về nhận thức, cảm xúc là tác hại của ma túy gây tổn hại về:",
+        options: ["Tinh thần", "Sức khỏe", "Kinh tế", "Thể chất"],
+        timeLimit: 15
+      },
+      {
+        id: 8,
+        question: "Ma tuý xâm nhâm vào cơ thể con người bằng cách nào:",
+        options: [
+          "Qua hệ hô hấp, hệ tuần hoàn",
+          "Qua hệ hô hấp, hệ tuần hoàn, hệ tiêu hoá",
+          "Qua hệ hô hấp, hệ tuần hoàn, hệ bài tiết",
+          "Qua hệ hô hấp, hệ tuần hoàn, hệ tiêu hóa và hệ bài tiết"
+        ],
+        timeLimit: 15
+      },
+      {
+        id: 9,
+        question: "Thuốc lắc là dạng ma tuý",
+        options: [
+          "Ma tuý công nghiệp",
+          "Ma tuý tự nhiên",
+          "Ma tuý tổng hợp",
+          "Ma tuý bán tổng hợp"
+        ],
+        timeLimit: 15
+      },
+      {
+        id: 10,
+        question: "Quá trình nghiện ma túy thường trải qua các giai đoạn nào?",
+        options: [
+          "Sử dụng ma túy – nghiện ma túy – sử dụng thường xuyên",
+          "Sử dụng ma túy – sử dụng lần đầu – sử dụng thường xuyên",
+          "Sử dụng ma túy – lạm dụng ma túy – lệ thuộc ma túy",
+          "Sử dụng ma túy – sử dụng thường xuyên – lệ thuộc ma túy"
+        ],
+        timeLimit: 15
+      }
+    ];
+
+    // Dữ liệu 10 câu hỏi Đề thi GDQP-AN Lớp 11 chuẩn
+    const LOCAL_FALLBACK_QUESTIONS_11 = [
+      {
+        id: 1,
+        question: "Vùng nước tiếp giáp với bờ biển, ở phía trong đường cơ sở được gọi là",
+        options: ["Thềm lục địa", "Nội thủy", "Vùng tiếp giáp lãnh hải", "Lãnh hải"],
+        timeLimit: 15
+      },
+      {
+        id: 2,
+        question: "Một trong những quan điểm chỉ đạo của Đảng về Chiến lược bảo vệ Tổ quốc Việt Nam xã hội chủ nghĩa trong tình hình mới là",
+        options: [
+          "Chỉ chú trọng xây dựng sức mạnh của đất nước về văn hóa - xã hội",
+          "Coi ngoại lực là nhân tố quyết định mọi thắng lợi, thành công",
+          "Kiên định mục tiêu độc lập dân tộc gắn liền với chủ nghĩa xã hội",
+          "Kết hợp chặt chẽ hai nhiệm vụ chiến lược: kháng chiến và kiến quốc"
+        ],
+        timeLimit: 15
+      },
+      {
+        id: 3,
+        question: "Việt Nam có đường biên giới chung trên đất liền với những quốc gia nào?",
+        options: ["Lào, Thái Lan, Philippin", "Mianma, Malaixia, Inđônêxia", "Lào, Campuchia, Thái Lan", "Trung Quốc, Lào, Campuchia"],
+        timeLimit: 15
+      },
+      {
+        id: 4,
+        question: "Luật Biển Việt Nam năm 2012 bao gồm",
+        options: ["36 điều và 8 phụ lục", "320 điều và 9 phụ lục", "9 chương với 62 điều", "7 chương với 55 điều"],
+        timeLimit: 15
+      },
+      {
+        id: 5,
+        question: "Công dân thuộc trường hợp nào sau đây được công nhận hoàn thành nghĩa vụ quân sự tại ngũ trong thời bình?",
+        options: [
+          "Phục vụ trên tàu kiểm ngư từ đủ 36 tháng trở lên",
+          "Tham gia Công an xã liên tục từ đủ 24 tháng trở lên",
+          "Phục vụ trên tàu kiểm ngư từ đủ 12 tháng trở lên",
+          "Dân quân thường trực có ít nhất 24 tháng phục vụ"
+        ],
+        timeLimit: 15
+      },
+      {
+        id: 6,
+        question: "Ban Chỉ huy quân sự cấp xã chuyển Lệnh gọi đăng kí nghĩa vụ quân sự đến công dân cư trú tại địa phương trước thời hạn đăng kí nghĩa vụ quân sự bao nhiêu ngày?",
+        options: ["8 ngày", "9 ngày", "10 ngày", "11 ngày"],
+        timeLimit: 15
+      },
+      {
+        id: 7,
+        question: "Đối tượng được tuyển chọn thực hiện nghĩa vụ tham gia công an nhân dân là công dân nam",
+        options: [
+          "Từ 18 đến hết 27 tuổi, thuộc trường hợp miễn gọi nhập ngũ",
+          "Từ 18 đến hết 45 tuổi, thuộc trường hợp tạm hoãn gọi nhập ngũ",
+          "Ngoài độ tuổi gọi nhập ngũ đã hoàn thành nghĩa vụ quân sự",
+          "Trong độ tuổi gọi nhập ngũ đã đăng kí nghĩa vụ quân sự"
+        ],
+        timeLimit: 15
+      },
+      {
+        id: 8,
+        question: "Công dân trực tiếp đăng kí nghĩa vụ quân sự tại",
+        options: ["Ban Chỉ huy quân sự cấp xã", "Ban Chỉ huy quân sự cấp tỉnh", "Ban Chỉ huy quân sự quận", "Ban Chỉ huy quân sự cấp huyện"],
+        timeLimit: 15
+      },
+      {
+        id: 9,
+        question: "Câu ca dao “Thầy đề cho số tào lao/ Thầy bói nói dựa, chỗ nào cũng ma” phản ánh về loại tệ nạn xã hội nào dưới đây?",
+        options: ["Tệ nạn mê tín dị đoan", "Tệ nạn ma túy", "Tệ nạn mại dâm", "Tệ nạn cờ bạc"],
+        timeLimit: 15
+      },
+      {
+        id: 10,
+        question: "Hành vi đánh bạc trái phép chưa đến mức truy cứu trách nhiệm hình sự sẽ bị xử phạt theo hình thức nào sau đây?",
+        options: ["Phạt tù chung thân", "Phạt tù có thời thời hạn", "Phạt vi phạm hành chính", "Phạt cải tạo không giam giữ"],
+        timeLimit: 15
+      }
+    ];
+
+    // 3 CÂU HỎI KHỞI ĐỘNG (HOÀN TOÀN KHÔNG TÍNH ĐIỂM) ĐỂ HỌC SINH LÀM QUEN THAO TÁC
+    const WARMUP_QUESTIONS = [
+      {
+        id: "w1",
+        question: "1 + 1 = ?",
+        options: ["2", "3", "4", "5"],
+        timeLimit: 15
+      },
+      {
+        id: "w2",
+        question: "Trong 4 con vật dưới đây con nào có thể bơi?",
+        options: ["Con cá", "Con gà", "Con mèo", "Con chim bồ câu"],
+        timeLimit: 15
+      },
+      {
+        id: "w3",
+        question: "Giáo viên chủ nhiệm của em hơn em 20 tuổi, vậy 20 năm nữa giáo viên chủ nhiệm hơn em bao nhiêu tuổi?",
+        options: ["20 tuổi", "40 tuổi", "0 tuổi", "10 tuổi"],
+        timeLimit: 15
+      }
+    ];
+
+    // Trạng thái ứng dụng
+    const DEFAULT_TIME_LIMIT_SECONDS = 15;
+    let questionTimeLimitSeconds = DEFAULT_TIME_LIMIT_SECONDS;
+    let activeQuestionTimeLimitSeconds = DEFAULT_TIME_LIMIT_SECONDS;
+    let gradeDataState = "loading";
+    let gradeRequestId = 0;
+    let currentGrade = "10"; // "10", "11" hoặc "12"
+    let rawQuestions = [];
+    let questions = [];
+    let currentIndex = 0;
+    let studentInfo = {};
+    let userAnswers = {}; // { questionId: { originalIndex, text } }
+    let timerInterval = null;
+    let timeLeft = 15;
+    let isQuestionLocked = false;
+    let isWarmupMode = true; // Bắt đầu bằng chế độ khởi động
+    const DEVICE_AUDIT_KEY = "quizDeviceAudit.v1";
+    const deviceAuditFlags = {
+      desktopUaSeen: false,
+      mobileDesktopMismatch: false,
+      f12Pressed: false,
+      devtoolsShortcutPressed: false
+    };
+    let deviceAuditInitialized = false;
+    let googleAuthUser = null;
+    let googleClientId = "";
+    let requireGoogleLogin = false;
+
+    function setupGoogleSignIn(clientId) {
+      if (!clientId) {
+        const box = document.getElementById("google-auth-box");
+        if (box) box.style.display = "none";
+        return;
+      }
+      const box = document.getElementById("google-auth-box");
+      if (box) box.style.display = "block";
+
+      function tryRender() {
+        if (typeof window !== "undefined" && window.google && window.google.accounts && window.google.accounts.id) {
+          try {
+            window.google.accounts.id.initialize({
+              client_id: clientId,
+              callback: handleGoogleCredentialResponse,
+              auto_select: false
+            });
+            const wrapper = document.getElementById("google-btn-wrapper");
+            if (wrapper) {
+              wrapper.innerHTML = "";
+              window.google.accounts.id.renderButton(wrapper, {
+                theme: "outline",
+                size: "large",
+                width: 280,
+                text: "signin_with",
+                shape: "pill"
+              });
+            }
+          } catch (err) {
+            console.warn("Google Sign-In init error:", err);
+          }
+        } else {
+          setTimeout(tryRender, 400);
+        }
+      }
+      tryRender();
+    }
+
+    function handleGoogleCredentialResponse(response) {
+      try {
+        const base64Url = response.credential.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(atob(base64).split('').map(function (c) {
+          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        }).join(''));
+        const profile = JSON.parse(jsonPayload);
+
+        googleAuthUser = {
+          name: profile.name || "",
+          email: profile.email || "",
+          picture: profile.picture || ""
+        };
+
+        const nameEl = document.getElementById("google-user-name");
+        const emailEl = document.getElementById("google-user-email");
+        const avatarEl = document.getElementById("google-user-avatar");
+        if (nameEl) nameEl.textContent = googleAuthUser.name;
+        if (emailEl) emailEl.textContent = googleAuthUser.email;
+        if (avatarEl && googleAuthUser.picture) avatarEl.src = googleAuthUser.picture;
+
+        const unauthBox = document.getElementById("google-auth-unauthenticated");
+        const authBox = document.getElementById("google-auth-authenticated");
+        if (unauthBox) unauthBox.style.display = "none";
+        if (authBox) authBox.style.display = "flex";
+
+        const nameInput = document.getElementById("input-name");
+        if (nameInput) {
+          nameInput.value = googleAuthUser.name;
+          nameInput.readOnly = true;
+          nameInput.style.backgroundColor = "#f1f5f9";
+        }
+      } catch (e) {
+        console.error("Lỗi giải mã Google Credential:", e);
+      }
+    }
+
+    function handleGoogleSignOut() {
+      googleAuthUser = null;
+      const unauthBox = document.getElementById("google-auth-unauthenticated");
+      const authBox = document.getElementById("google-auth-authenticated");
+      if (authBox) authBox.style.display = "none";
+      if (unauthBox) unauthBox.style.display = "block";
+
+      const nameInput = document.getElementById("input-name");
+      if (nameInput) {
+        nameInput.value = "";
+        nameInput.readOnly = false;
+        nameInput.style.backgroundColor = "";
+      }
+    }
+
+    // Chặn người dùng nhấn phím Back hoặc quay lại lịch sử trình duyệt (bọc an toàn tránh lỗi iframe sandbox)
+    try {
+      if (typeof history !== "undefined" && history.pushState && window.location) {
+        history.pushState(null, null, window.location.href);
+        window.onpopstate = function () {
+          history.go(1);
+        };
+      }
+    } catch (e) {
+      console.warn("Lưu ý: Không thể can thiệp history trong sandbox iframe:", e);
+    }
+
+    // Thuật toán đảo mảng ngẫu nhiên Fisher-Yates (chuẩn khoa học máy tính)
+    function shuffleArray(arr) {
+      const copy = [...arr];
+      for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy;
+    }
+
+    // Không dùng độ rộng màn hình hay cảm ứng để cho phép truy cập:
+    // thu nhỏ cửa sổ hoặc dùng laptop cảm ứng vẫn là máy tính.
+    function isPhoneDevice() {
+      const ua = navigator.userAgent || "";
+      const otherPhone = /iPhone|iPod|Windows Phone|IEMobile|BlackBerry|BB10|Opera Mini/i.test(ua);
+      const androidPhone = /Android/i.test(ua) && /Mobile/i.test(ua);
+      return otherPhone || androidPhone;
+    }
+
+    // These are observations, not proof that DevTools is open or a pupil cheated.
+    function rememberDeviceSignal(flag) {
+      if (!Object.prototype.hasOwnProperty.call(deviceAuditFlags, flag) || deviceAuditFlags[flag]) return;
+      deviceAuditFlags[flag] = true;
+      try {
+        sessionStorage.setItem(DEVICE_AUDIT_KEY, JSON.stringify(deviceAuditFlags));
+      } catch (err) {
+        // Storage can be unavailable in an iframe; keep the current-page signals.
+      }
+    }
+
+    function captureDeviceSignals() {
+      const phone = isPhoneDevice();
+      const ua = navigator.userAgent || "";
+      const platform = navigator.platform || "";
+      const hintsPlatform = navigator.userAgentData ? navigator.userAgentData.platform || "" : "";
+      if (!phone && /Windows NT|Macintosh|X11|CrOS|Linux x86_64/i.test(ua)) {
+        rememberDeviceSignal("desktopUaSeen");
+      }
+      const desktopPlatform = /^(Win|Mac)|Linux (x86_64|i[3-6]86)|CrOS/i.test(platform);
+      const desktopHints = /^(Windows|macOS|Chrome OS|Linux)$/i.test(hintsPlatform);
+      if (phone && (desktopPlatform || desktopHints)) {
+        rememberDeviceSignal("mobileDesktopMismatch");
+      }
+    }
+
+    function initDeviceAudit() {
+      if (deviceAuditInitialized) return;
+      deviceAuditInitialized = true;
+      try {
+        const previous = JSON.parse(sessionStorage.getItem(DEVICE_AUDIT_KEY) || "{}");
+        Object.keys(deviceAuditFlags).forEach(function (flag) {
+          if (previous && previous[flag] === true) deviceAuditFlags[flag] = true;
+        });
+      } catch (err) {
+        // A storage error must not prevent the pupil from starting the quiz.
+      }
+      captureDeviceSignals();
+      document.addEventListener("keydown", function (event) {
+        const key = String(event.key || "").toLowerCase();
+        if (key === "f12" || event.code === "F12") rememberDeviceSignal("f12Pressed");
+        if ((event.ctrlKey && event.shiftKey || event.metaKey && event.altKey) && /^[ijc]$/.test(key)) {
+          rememberDeviceSignal("devtoolsShortcutPressed");
+        }
+      }, true);
+    }
+
+    function collectDeviceAudit() {
+      captureDeviceSignals();
+      return {
+        version: 1,
+        phoneReported: isPhoneDevice(),
+        flags: Object.assign({}, deviceAuditFlags)
+      };
+    }
+
+    function checkDeviceAccess() {
+      captureDeviceSignals();
+      const allowed = isPhoneDevice();
+      document.getElementById("btn-start").disabled = !allowed || gradeDataState !== "ready";
+      if (!allowed) {
+        clearInterval(timerInterval);
+        isQuestionLocked = true;
+        showScreen("screen-device-blocked");
+      }
+      return allowed;
+    }
+
+    function recheckDeviceAccess() {
+      if (!checkDeviceAccess()) return;
+      showScreen("screen-welcome");
+      switchGrade(currentGrade);
+    }
+
+    // Chuyển đổi khối lớp 10, 11 hoặc 12.
+    function switchGrade(grade) {
+      if (!checkDeviceAccess()) return;
+      currentGrade = ["10", "11", "12"].indexOf(String(grade)) >= 0 ? String(grade) : "10";
+      const badge = document.getElementById("grade-badge");
+      const sub = document.getElementById("grade-sub");
+
+      ["10", "11", "12"].forEach(function (value) {
+        const button = document.getElementById("btn-grade-" + value);
+        if (button) button.classList.toggle("active", value === currentGrade);
+      });
+
+      if (badge) {
+        badge.innerText = "Đề Thi Khối " + currentGrade;
+      }
+      if (sub) {
+        sub.innerText = "Môn: Giáo dục Quốc phòng và An ninh - Lớp " + currentGrade;
+      }
+
+      loadGradeQuestions(currentGrade);
+    }
+
+    function loadGradeQuestions(grade) {
+      const requestId = ++gradeRequestId;
+      gradeDataState = "loading";
+      rawQuestions = [];
+      updateQuizLoadStatus("Đang tải đề Khối " + grade + " và thời gian làm bài...");
+
+      function failLoad(error) {
+        if (requestId !== gradeRequestId || grade !== currentGrade) return;
+        gradeDataState = "error";
+        rawQuestions = [];
+        console.warn("Không tải được đề thi:", error);
+        updateQuizLoadStatus("Không tải được đề thi. Vui lòng bấm Tải lại đề thi hoặc tải lại trang.");
+      }
+
+      function applyData(data) {
+        // Requests can return out of order when the pupil switches grades quickly.
+        if (requestId !== gradeRequestId || grade !== currentGrade) return;
+        if (!data || !Array.isArray(data.questions)) {
+          failLoad(new Error("Dữ liệu đề thi không hợp lệ"));
+          return;
+        }
+        rawQuestions = data.questions;
+        const seconds = Number(data.timeLimitSeconds);
+        questionTimeLimitSeconds = Number.isSafeInteger(seconds) && seconds > 0 ? seconds : DEFAULT_TIME_LIMIT_SECONDS;
+        document.querySelectorAll(".question-time-limit").forEach(function (element) {
+          element.textContent = questionTimeLimitSeconds;
+        });
+
+        // Cấu hình Google Sign-In nếu có
+        if (data.googleClientId) {
+          googleClientId = data.googleClientId;
+          requireGoogleLogin = data.requireGoogleLogin !== false;
+          setupGoogleSignIn(googleClientId);
+        } else {
+          const authBox = document.getElementById("google-auth-box");
+          if (authBox) authBox.style.display = "none";
+        }
+
+        gradeDataState = rawQuestions.length > 0 ? "ready" : "empty";
+        updateQuizLoadStatus(rawQuestions.length > 0 ?
+          "Đề Khối " + grade + ": " + rawQuestions.length + " câu · " + questionTimeLimitSeconds + " giây/câu (kể cả khởi động)." :
+          "Khối " + grade + " chưa có câu hỏi. Vui lòng chọn khối khác hoặc chờ giáo viên cập nhật đề.");
+      }
+
+      if (typeof google !== "undefined" && google.script && google.script.run) {
+        try {
+          google.script.run.withSuccessHandler(applyData).withFailureHandler(failLoad).getQuizData(grade);
+        } catch (error) {
+          failLoad(error);
+        }
+      } else {
+        // Môi trường Web / Cloudflare Pages: gọi API RESTful
+        fetch("/api/quiz?grade=" + encodeURIComponent(grade))
+          .then(function (res) {
+            if (!res.ok) throw new Error("HTTP " + res.status);
+            return res.json();
+          })
+          .then(function (data) {
+            if (data && data.success !== false) {
+              applyData(data);
+            } else {
+              throw new Error(data && data.message ? data.message : "Dữ liệu đề thi không hợp lệ");
+            }
+          })
+          .catch(function (error) {
+            console.warn("Không kết nối được /api/quiz, dùng dữ liệu mẫu dự phòng:", error);
+            const fallback = grade === "12" ? [] : grade === "11" ? LOCAL_FALLBACK_QUESTIONS_11 : LOCAL_FALLBACK_QUESTIONS_10;
+            applyData({ questions: fallback, timeLimitSeconds: DEFAULT_TIME_LIMIT_SECONDS });
+          });
+      }
+    }
+
+    function updateQuizLoadStatus(message) {
+      document.getElementById("quiz-load-status").textContent = message;
+      document.getElementById("btn-start").disabled = !isPhoneDevice() || gradeDataState !== "ready";
+      document.getElementById("btn-reload-data").hidden = gradeDataState === "ready" || gradeDataState === "loading";
+    }
+
+    function ensureQuizReady() {
+      if (gradeDataState === "ready" && rawQuestions.length > 0) return true;
+      showScreen("screen-welcome");
+      return false;
+    }
+
+    function showScreen(screenId) {
+      if (screenId !== "screen-device-blocked" && !isPhoneDevice()) {
+        screenId = "screen-device-blocked";
+      }
+      document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+      const target = document.getElementById(screenId);
+      if (target) {
+        target.classList.add("active");
+        try { window.scrollTo(0, 0); } catch (e) { }
+      }
+    }
+
+    // Hàm khởi tạo ứng dụng - Chạy được ở cả iframe Apps Script
+    function initApp() {
+      initDeviceAudit();
+      bindUiEvents();
+      window.quizAppReady = true;
+      if (!checkDeviceAccess()) return;
+      showScreen("screen-welcome");
+
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const urlGrade = params.get("lop") || params.get("grade") || "10";
+        switchGrade(urlGrade);
+      } catch (err) {
+        console.warn("URL param fallback:", err);
+        switchGrade("10");
+      }
+
+    }
+
+    // Keep all button handlers in one place and bind them only once.
+    function bindUiEvents() {
+      const actions = [
+        ["btn-recheck-device", recheckDeviceAccess],
+        ["btn-start", startQuiz],
+        ["btn-grade-10", function () { switchGrade("10"); }],
+        ["btn-grade-11", function () { switchGrade("11"); }],
+        ["btn-grade-12", function () { switchGrade("12"); }],
+        ["btn-reload-data", function () { loadGradeQuestions(currentGrade); }],
+        ["btn-official", startOfficialQuiz],
+        ["btn-restart-warmup", restartWarmup]
+      ];
+      actions.forEach(function (action) {
+        const button = document.getElementById(action[0]);
+        if (!button || button.dataset.bound === "true") return;
+        button.addEventListener("click", function (event) {
+          event.preventDefault();
+          action[1]();
+        });
+        button.dataset.bound = "true";
+      });
+    }
+
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", initApp);
+    } else {
+      initApp();
+    }
+
+    // BƯỚC 1: BẮT ĐẦU VỚI 3 CÂU KHỞI ĐỘNG LÀM QUEN
+    function startQuiz() {
+      if (!checkDeviceAccess()) return;
+      if (!ensureQuizReady()) return;
+      try {
+        const nameInput = document.getElementById("input-name");
+        let name = nameInput ? nameInput.value.trim() : "";
+        const codeInput = document.getElementById("input-code");
+        const code = codeInput ? codeInput.value.trim() : "";
+        const phoneInput = document.getElementById("input-phone");
+        const phone = phoneInput ? phoneInput.value.trim() : "";
+
+        // Tự động gán tên nếu để trống
+        if (!name) {
+          name = googleAuthUser ? googleAuthUser.name : "Thí sinh tự do";
+          if (nameInput) nameInput.value = name;
+        }
+
+        studentInfo = {
+          fullName: name,
+          email: googleAuthUser ? googleAuthUser.email : "",
+          studentCode: code,
+          phone: phone,
+          grade: currentGrade
+        };
+        isWarmupMode = true;
+        currentIndex = 0;
+        userAnswers = {};
+
+        questions = WARMUP_QUESTIONS.map(q => {
+          const optionsWithMeta = q.options.map((optText, origIdx) => ({
+            text: optText,
+            originalIndex: origIdx
+          }));
+          return {
+            id: q.id,
+            question: q.question,
+            options: shuffleArray(optionsWithMeta),
+            timeLimit: questionTimeLimitSeconds
+          };
+        });
+
+        showScreen("screen-quiz");
+        loadQuestion(currentIndex);
+      } catch (err) {
+        window.showQuizError(err);
+      }
+    }
+
+    // BƯỚC 2: HOÀN THÀNH KHỞI ĐỘNG ➔ HIỆN MÀN HÌNH XÁC NHẬN "EM ĐÃ HIỂU CHƯA"
+    function finishWarmup() {
+      try {
+        clearInterval(timerInterval);
+        showScreen("screen-warmup-done");
+      } catch (err) {
+        console.error("Lỗi finishWarmup:", err);
+      }
+    }
+
+    // NÚT VÒNG LẠI: NẾU HỌC SINH CHƯA HIỂU THÌ CHO KHỞI ĐỘNG LẠI TỪ ĐẦU
+    function restartWarmup() {
+      if (!checkDeviceAccess()) return;
+      if (!ensureQuizReady()) return;
+      try {
+        clearInterval(timerInterval);
+        isWarmupMode = true;
+        currentIndex = 0;
+        userAnswers = {};
+
+        questions = shuffleArray(WARMUP_QUESTIONS).map(q => {
+          const optionsWithMeta = q.options.map((optText, origIdx) => ({
+            text: optText,
+            originalIndex: origIdx
+          }));
+          return {
+            id: q.id,
+            question: q.question,
+            options: shuffleArray(optionsWithMeta),
+            timeLimit: questionTimeLimitSeconds
+          };
+        });
+
+        showScreen("screen-quiz");
+        loadQuestion(currentIndex);
+      } catch (err) {
+        window.showQuizError(err);
+      }
+    }
+
+    // BƯỚC 3: BƯỚC VÀO BÀI THI CHÍNH THỨC (TÍNH ĐIỂM & LƯU GOOGLE SHEET)
+    function startOfficialQuiz() {
+      if (!checkDeviceAccess()) return;
+      if (!ensureQuizReady()) return;
+      try {
+        isWarmupMode = false;
+        currentIndex = 0;
+        userAnswers = {};
+
+        const sourceList = rawQuestions;
+
+        // 1. RANDOM THỨ TỰ CÂU HỎI CHÍNH THỨC
+        const shuffledQList = shuffleArray(sourceList);
+
+        // 2. RANDOM THỨ TỰ ĐÁP ÁN (A, B, C, D)
+        questions = shuffledQList.map(q => {
+          const optionsWithMeta = q.options.map((optText, origIdx) => ({
+            text: optText,
+            originalIndex: origIdx
+          }));
+          return {
+            id: q.id,
+            question: q.question,
+            options: shuffleArray(optionsWithMeta),
+            timeLimit: questionTimeLimitSeconds
+          };
+        });
+
+        showScreen("screen-quiz");
+        loadQuestion(currentIndex);
+      } catch (err) {
+        window.showQuizError(err);
+      }
+    }
+
+    // Hiển thị câu hỏi hiện tại
+    function loadQuestion(index) {
+      if (index >= questions.length) {
+        if (isWarmupMode) {
+          finishWarmup();
+        } else {
+          finishQuiz();
+        }
+        return;
+      }
+
+      // Xóa sạch trạng thái focus trên màn hình cảm ứng để triệt tiêu vết ấn
+      try {
+        if (document.activeElement && typeof document.activeElement.blur === "function") {
+          document.activeElement.blur();
+        }
+        if (typeof window.getSelection === "function") {
+          const sel = window.getSelection();
+          if (sel && typeof sel.removeAllRanges === "function") {
+            sel.removeAllRanges();
+          }
+        }
+      } catch (e) { }
+
+      const q = questions[index];
+      isQuestionLocked = false;
+
+      // Cập nhật tiến độ & thông báo chế độ khởi động vs bài thi thật
+      const progEl = document.getElementById("q-progress");
+      const noteEl = document.getElementById("locked-note");
+
+      if (isWarmupMode) {
+        progEl.innerText = "🎯 Khởi động: " + (index + 1) + " / " + questions.length;
+        progEl.style.background = "#fef3c7";
+        progEl.style.color = "#b45309";
+        noteEl.innerHTML = "💡 <strong>Khởi động làm quen:</strong> " + q.timeLimit + "s/câu, ấn là khóa luôn. <em>Câu này KHÔNG tính điểm.</em>";
+      } else {
+        progEl.innerText = "Câu " + (index + 1) + " / " + questions.length;
+        progEl.style.background = "var(--primary-light)";
+        progEl.style.color = "var(--primary)";
+        noteEl.innerHTML = "🔒 Lưu ý: Nhấn chọn đáp án sẽ khóa ngay lập tức và chuyển câu sau.";
+      }
+
+      document.getElementById("q-text").innerText = (index + 1) + ". " + q.question;
+
+      // Reset & Render danh sách phương án đã được xáo trộn
+      const container = document.getElementById("options-container");
+      container.innerHTML = "";
+
+      const letters = ["A", "B", "C", "D"];
+      q.options.forEach((optObj, optIdx) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "opt-btn";
+        btn.id = "opt-" + optIdx;
+        btn.onclick = () => selectOption(optObj, optIdx);
+
+        const letter = document.createElement("span");
+        letter.className = "opt-letter";
+        letter.textContent = letters[optIdx];
+        const text = document.createElement("span");
+        text.className = "opt-text";
+        text.textContent = optObj.text;
+        btn.appendChild(letter);
+        btn.appendChild(text);
+        container.appendChild(btn);
+      });
+
+      // Bắt đầu đếm ngược theo cấu hình đã tải cùng đề.
+      startTimer(q.timeLimit);
+    }
+
+    // Quản lý đồng hồ đếm ngược theo thời gian của câu hiện tại.
+    function startTimer(seconds) {
+      clearInterval(timerInterval);
+      activeQuestionTimeLimitSeconds = Number.isSafeInteger(seconds) && seconds > 0 ? seconds : DEFAULT_TIME_LIMIT_SECONDS;
+      timeLeft = activeQuestionTimeLimitSeconds;
+      updateTimerUI(timeLeft);
+
+      const startTime = Date.now();
+      const totalDuration = activeQuestionTimeLimitSeconds * 1000;
+
+      timerInterval = setInterval(() => {
+        if (isQuestionLocked) {
+          clearInterval(timerInterval);
+          return;
+        }
+
+        const elapsed = Date.now() - startTime;
+        const remainingMs = Math.max(0, totalDuration - elapsed);
+        timeLeft = Math.ceil(remainingMs / 1000);
+
+        updateTimerUI(timeLeft, (remainingMs / totalDuration) * 100);
+
+        if (remainingMs <= 0) {
+          clearInterval(timerInterval);
+          handleTimeout();
+        }
+      }, 100);
+    }
+
+    function updateTimerUI(seconds, percent = null) {
+      const badge = document.getElementById("timer-badge");
+      const val = document.getElementById("timer-val");
+      const bar = document.getElementById("time-bar");
+
+      val.innerText = seconds + "s";
+
+      if (percent === null) {
+        percent = (seconds / activeQuestionTimeLimitSeconds) * 100;
+      }
+      bar.style.width = percent + "%";
+
+      if (seconds <= 5) {
+        badge.classList.add("urgent");
+        bar.classList.add("urgent");
+      } else {
+        badge.classList.remove("urgent");
+        bar.classList.remove("urgent");
+      }
+    }
+
+    // Người dùng nhấn chọn phương án -> KHÓA NGAY LẬP TỨC
+    function selectOption(optObj, clickedButtonIdx) {
+      if (isQuestionLocked) return;
+      isQuestionLocked = true;
+      clearInterval(timerInterval);
+
+      const q = questions[currentIndex];
+      // Chỉ lưu đáp án khi đang ở bài thi chính thức (khởi động không lưu)
+      if (!isWarmupMode) {
+        userAnswers[q.id] = {
+          originalIndex: optObj.originalIndex,
+          text: optObj.text
+        };
+      }
+
+      // Khóa tất cả các nút
+      const allButtons = document.querySelectorAll(".opt-btn");
+      allButtons.forEach((btn, idx) => {
+        btn.classList.add("locked");
+        if (idx === clickedButtonIdx) {
+          btn.classList.add("selected");
+        } else {
+          btn.classList.add("dimmed");
+        }
+      });
+
+      // Hủy trạng thái focus lập tức trên điện thoại
+      if (document.activeElement && typeof document.activeElement.blur === "function") {
+        document.activeElement.blur();
+      }
+
+      // Chuyển sang câu tiếp theo sau 0.6 giây
+      setTimeout(() => {
+        currentIndex++;
+        loadQuestion(currentIndex);
+      }, 600);
+    }
+
+    // Xử lý khi hết thời gian mà thí sinh chưa chọn
+    function handleTimeout() {
+      if (isQuestionLocked) return;
+      isQuestionLocked = true;
+
+      const q = questions[currentIndex];
+      if (!isWarmupMode) {
+        userAnswers[q.id] = {
+          originalIndex: -1,
+          text: "Hết giờ / Bỏ qua"
+        };
+      }
+
+      const allButtons = document.querySelectorAll(".opt-btn");
+      allButtons.forEach(btn => {
+        btn.classList.add("locked", "dimmed");
+      });
+
+      // Báo hết giờ và chuyển tiếp
+      document.getElementById("timer-val").innerText = "Hết giờ!";
+
+      setTimeout(() => {
+        currentIndex++;
+        loadQuestion(currentIndex);
+      }, 700);
+    }
+
+    // Hoàn thành bài thi -> Gửi dữ liệu về Google Apps Script
+    function finishQuiz() {
+      if (!checkDeviceAccess()) return;
+      clearInterval(timerInterval);
+      showScreen("screen-submitting");
+
+      const payload = {
+        studentInfo: studentInfo,
+        answers: userAnswers,
+        deviceAudit: collectDeviceAudit()
+      };
+
+      if (typeof google !== "undefined" && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler(onQuizSubmitted)
+          .withFailureHandler(onQuizError)
+          .submitQuizResults(payload);
+      } else {
+        // Môi trường Web / Cloudflare Pages: POST /api/submit
+        fetch("/api/submit", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        })
+          .then(function (res) {
+            if (!res.ok) throw new Error("HTTP " + res.status);
+            return res.json();
+          })
+          .then(onQuizSubmitted)
+          .catch(function (error) {
+            console.warn("Không kết nối được /api/submit:", error);
+            // Fallback offline mock khi mở file HTML cục bộ (file://)
+            setTimeout(() => {
+              const mockGraded = questions.map(q => {
+                const ans = userAnswers[q.id];
+                const isCorrect = ans && ans.originalIndex === 0;
+                return {
+                  id: q.id,
+                  question: q.question,
+                  userAnswerText: ans ? ans.text : "Hết giờ / Bỏ qua",
+                  correctAnswerText: (q.options.find(o => o.originalIndex === 0) || {}).text || "Đáp án chuẩn",
+                  isCorrect: isCorrect
+                };
+              });
+              const correctCount = mockGraded.filter(g => g.isCorrect).length;
+              onQuizSubmitted({
+                success: true,
+                score: ((correctCount / questions.length) * 10).toFixed(1),
+                correctCount: correctCount,
+                totalQuestions: questions.length,
+                detailedResults: mockGraded
+              });
+            }, 1200);
+          });
+      }
+    }
+
+    function onQuizSubmitted(res) {
+      if (!res || !res.success) {
+        alert("Lỗi khi lưu kết quả: " + (res ? res.message : "Không xác định"));
+        showScreen("screen-warmup-done");
+        return;
+      }
+
+      showScreen("screen-result");
+
+      // Cập nhật điểm
+      document.getElementById("res-score").innerText = res.score;
+      document.getElementById("res-meta").innerText =
+        "Thí sinh: " + studentInfo.fullName + " (Khối " + (studentInfo.grade || "10") + ") • Trả lời đúng: " + res.correctCount + "/" + res.totalQuestions + " câu";
+
+      const scoreNum = parseFloat(res.score);
+      let statusText = "Hoàn thành bài thi!";
+      if (scoreNum >= 8.5) statusText = "Xuất sắc! 🎉";
+      else if (scoreNum >= 7.0) statusText = "Khá tốt! 👏";
+      else if (scoreNum >= 5.0) statusText = "Đạt yêu cầu! 👍";
+      else statusText = "Cần ôn tập thêm! 📖";
+      document.getElementById("res-status").innerText = statusText;
+
+      // Render danh sách xem lại chi tiết
+      const reviewContainer = document.getElementById("review-list");
+      reviewContainer.innerHTML = "";
+
+      if (res.detailedResults && res.detailedResults.length > 0) {
+        res.detailedResults.forEach((item, i) => {
+          const div = document.createElement("div");
+          div.className = "review-item " + (item.isCorrect ? "correct" : "wrong");
+          const question = document.createElement("div");
+          question.className = "review-q";
+          question.textContent = "Câu " + (i + 1) + ": " + item.question;
+          div.appendChild(question);
+
+          const answers = document.createElement("div");
+          answers.className = "review-ans";
+          const chosen = document.createElement("div");
+          const chosenLabel = document.createElement("strong");
+          chosenLabel.textContent = "Lựa chọn của bạn: ";
+          chosen.appendChild(chosenLabel);
+          const chosenText = document.createElement("span");
+          chosenText.style.color = item.isCorrect ? "var(--success)" : "var(--danger)";
+          chosenText.textContent = item.userAnswerText + (item.isCorrect ? " ✓" : " ✗");
+          chosen.appendChild(chosenText);
+          answers.appendChild(chosen);
+
+          if (!item.isCorrect) {
+            const correct = document.createElement("div");
+            const correctLabel = document.createElement("strong");
+            correctLabel.textContent = "Đáp án đúng: ";
+            correct.appendChild(correctLabel);
+            const correctText = document.createElement("span");
+            correctText.style.color = "var(--success)";
+            correctText.style.fontWeight = "600";
+            correctText.textContent = item.correctAnswerText;
+            correct.appendChild(correctText);
+            answers.appendChild(correct);
+          }
+
+          div.appendChild(answers);
+          reviewContainer.appendChild(div);
+        });
+      }
+    }
+
+    function onQuizError(err) {
+      alert("Không thể kết nối đến máy chủ Google Apps Script: " + err.toString());
+      showScreen("screen-welcome");
+    }
+  </script>
+</body>
+
+</html>
